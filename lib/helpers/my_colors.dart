@@ -9,5 +9,6 @@ class MyColors{
   static Color hint = const Color(0xFFD4AC9A);
   static Color stoke = const Color(0xFFBB8169);
   static Color date_hint = const Color(0xFF6B6B6B);
+  static Color fav = Color.fromARGB(255, 223, 5, 5);
 
 }

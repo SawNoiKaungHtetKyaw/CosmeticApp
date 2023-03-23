@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:online_shop_app/controllers/favorite_controller.dart';
+import 'package:online_shop_app/controllers/product_controller.dart';
+import 'package:online_shop_app/pages/buy_now.dart';
+import 'package:online_shop_app/pages/product_detail.dart';
+import 'package:provider/provider.dart';
 
 import '../helpers/my_colors.dart';
 import '../helpers/my_text.dart';
+import '../models/product.dart';
 
 class Favorite extends StatefulWidget {
   const Favorite({Key? key}) : super(key: key);
@@ -13,28 +18,54 @@ class Favorite extends StatefulWidget {
   State<Favorite> createState() => _FavoriteState();
 }
 
+List<Product> products = [];
+
 class _FavoriteState extends State<Favorite> {
   @override
   Widget build(BuildContext context) {
+  List<Product> allProducts = context.read<ProductController>().products;
+
     return Scaffold(
-      backgroundColor: MyColors.primary,
-      appBar: AppBar(
-        elevation: 0,
-        title: Text(MyText.fav),
         backgroundColor: MyColors.primary,
-      ),
-      body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Expanded(
-            child: ListView.builder(
-          itemCount: 2,
-          itemBuilder: (context, index) => _yourCartlist(),
-        )
+        appBar: AppBar(
+          elevation: 0,
+          title: Text(MyText.fav),
+          backgroundColor: MyColors.primary,
         ),
-      ])
-    );
-  
+        body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Selector<FavoriteController, List<int>>(
+              shouldRebuild: (previous, next) => previous!= next,//
+              selector: (context, bloc) => bloc.favoriteProducts,
+              builder: (context, value, child) {
+                products = [];
+                value.forEach((element) {
+                  allProducts.forEach((all) { 
+                    if(all.id == element){
+                      products.add(all);
+                    }
+                  });
+                });
+                print(products);
+                return products.isEmpty ? Expanded(
+                  child: Center(child: Text("No Favorite Product",style: TextStyle(
+                    color: MyColors.normal,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp
+                  ),),),
+                ) : Expanded(
+                    child: ListView.builder(
+                  itemCount: products.length,
+                  itemBuilder: (context, index) => GestureDetector(
+                    onTap: () {
+                      Get.to(()=>ProductDetail(productId: products[index].id ?? -1));
+                    },
+                    child: _yourCartlist(products[index])),
+                ));
+              }),
+        ]));
   }
-  Widget _yourCartlist() {
+
+  Widget _yourCartlist(product) {
     return Stack(
       children: [
         Container(
@@ -53,12 +84,11 @@ class _FavoriteState extends State<Favorite> {
                     height: 70.w,
                     margin: EdgeInsets.only(right: 10.w),
                     decoration: BoxDecoration(
-                      color: MyColors.normal,
-                      borderRadius: BorderRadius.circular(10.r),
-                      // image: DecorationImage(
-                      //     image: NetworkImage(),
-                      //     fit: BoxFit.contain)
-                    ),
+                        color: MyColors.normal,
+                        borderRadius: BorderRadius.circular(10.r),
+                        image: DecorationImage(
+                            image: NetworkImage(product.image_link),
+                            fit: BoxFit.contain)),
                   ),
                   Container(
                     width: 230.w,
@@ -67,7 +97,7 @@ class _FavoriteState extends State<Favorite> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Maybelline Face Studio Master Hi-Light Booster Bronzer",
+                          product.name,
                           style: TextStyle(
                               color: MyColors.accent,
                               fontSize: 12.sp,
@@ -75,7 +105,7 @@ class _FavoriteState extends State<Favorite> {
                               overflow: TextOverflow.fade),
                         ),
                         Text(
-                          "bronzer",
+                          product.brand,
                           style: TextStyle(
                             color: MyColors.hint,
                             fontSize: 10.sp,
@@ -96,7 +126,7 @@ class _FavoriteState extends State<Favorite> {
                         width: 80.w,
                       ),
                       Text(
-                        "\$ ${14.9}",
+                        "\$ ${product.price}",
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 12.sp,
@@ -106,27 +136,28 @@ class _FavoriteState extends State<Favorite> {
                     ],
                   ),
                   Container(
-                child: Container(
-                  width: 150.w,
-                  height: 30.w,
-                  child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                          primary: MyColors.accent,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.r))),
-                      child: Text(
-                        MyText.buy_now,
-                        style: TextStyle(
-                            color: MyColors.normal,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.bold),
-                      )),
-                ),
-              )
+                    child: Container(
+                      width: 150.w,
+                      height: 30.w,
+                      child: ElevatedButton(
+                          onPressed: () {
+                            Get.to(()=>BuyNow());
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: MyColors.accent,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30.r))),
+                          child: Text(
+                            MyText.buy_now,
+                            style: TextStyle(
+                                color: MyColors.normal,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold),
+                          )),
+                    ),
+                  )
                 ],
               ),
-              
             ],
           ),
         ),
@@ -134,7 +165,11 @@ class _FavoriteState extends State<Favorite> {
           right: 5.w,
           top: -10.h,
           child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                context
+                                            .read<FavoriteController>()
+                                            .removeFav(product.id);
+              },
               icon: Icon(
                 Icons.close,
                 color: MyColors.accent,
@@ -172,5 +207,4 @@ class _FavoriteState extends State<Favorite> {
       ),
     );
   }
-
 }

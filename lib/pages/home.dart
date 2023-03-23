@@ -1,9 +1,13 @@
+import 'package:badges/badges.dart' as badges;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:online_shop_app/controllers/cart_controller.dart';
+import 'package:online_shop_app/controllers/favorite_controller.dart';
 import 'package:online_shop_app/controllers/product_controller.dart';
 import 'package:online_shop_app/helpers/my_colors.dart';
 import 'package:online_shop_app/helpers/my_text.dart';
+import 'package:online_shop_app/models/product_insert.dart';
 import 'package:online_shop_app/pages/about.dart';
 import 'package:online_shop_app/pages/contact_us.dart';
 import 'package:online_shop_app/pages/favorite.dart';
@@ -24,13 +28,14 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   _loadProducts() async {
     await context.read<ProductController>().getProduct();
+    await context.read<CartController>().getAllProduct();
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _loadProducts();
+    context.read<FavoriteController>().getAllFavProduct();
   }
 
   @override
@@ -49,105 +54,94 @@ class _HomeState extends State<Home> {
         ),
         centerTitle: true,
         actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 5.h, top: 3.h),
-            child: Stack(clipBehavior: Clip.none, children: [
-              IconButton(
-                onPressed: () {
-                  Get.to(()=>YourCart());
-                },
-                icon: Icon(
-                  Icons.shopping_cart_outlined,
-                  color: MyColors.normal,
-                  size: 20.sp,
-                ),
+          Selector<CartController, List<ProductInsert>>(
+            selector: (context, bloc) => bloc.cartProducts,
+            builder: (context, prod, child) => badges.Badge(
+              // position: BadgePosition(top: 4, end: 4),
+              badgeContent: Text(
+                prod.length.toString(),
+                style: TextStyle(color: MyColors.normal),
               ),
-              Positioned(
-                top: 2.h,
-                right: 3.h,
-                child: Container(
-                  width: 15.h,
-                  height: 15.h,
-                  decoration:
-                      BoxDecoration(color: Colors.pink, shape: BoxShape.circle),
-                  child: Center(
-                    child: Text(
-                      "0",
-                      style: TextStyle(
-                          color: MyColors.normal,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w400),
-                    ),
-                  ),
-                ),
-              )
-            ]),
+              child: IconButton(
+                  icon: Icon(Icons.shopping_cart),
+                  onPressed: () {
+                    Get.to(() => YourCart());
+                  }),
+            ),
           ),
+          SizedBox(
+            width: 15.w,
+          )
         ],
       ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Container(
-              width: 360.w,
-              height: 200.h,
-              color: MyColors.primary,
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
+      body: Selector<ProductController, List<Product>>(
+        selector: (context, bloc) => bloc.products,
+        builder: (context, prod, child) => SafeArea(
+          child: Stack(
+            children: [
+              Container(
                 width: 360.w,
-                height: 450.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30.r),
-                    topRight: Radius.circular(30.r),
+                height: 200.h,
+                color: MyColors.primary,
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: 360.w,
+                  height: 450.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30.r),
+                      topRight: Radius.circular(30.r),
+                    ),
+                    color: MyColors.hint,
                   ),
-                  color: MyColors.hint,
                 ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(15.w),
-              child: Column(
-                children: [
-                  //search bar
-                  TextFormField(
-                    decoration: InputDecoration(
-                        fillColor: MyColors.normal,
-                        filled: true,
-                        hintText: MyText.search,
-                        hintStyle: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14.sp,
-                            color: MyColors.hint),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: MyColors.hint,
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                        enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(width: 1.w, color: MyColors.primary),
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(30.r))),
-                        focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(width: 1.w, color: MyColors.primary),
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(30.r)))),
-                  ),
+              Padding(
+                padding: EdgeInsets.all(15.w),
+                child: Column(
+                  children: [
+                    //search bar
+                    TextFormField(
+                      decoration: InputDecoration(
+                          fillColor: MyColors.normal,
+                          filled: true,
+                          hintText: MyText.search,
+                          hintStyle: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14.sp,
+                              color: MyColors.hint),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: MyColors.hint,
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  width: 1.w, color: MyColors.primary),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30.r))),
+                          focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  width: 1.w, color: MyColors.primary),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30.r)))),
+                      onChanged: (value) => context
+                          .read<ProductController>()
+                          .searchProduct(value),
+                    ),
 
-                  SizedBox(
-                    height: 10.h,
-                  ),
+                    SizedBox(
+                      height: 10.h,
+                    ),
 
-                  // List of products
-                  Expanded(child: _getProductContent())
-                ],
-              ),
-            )
-          ],
+                    Expanded(child: _getProductContent(prod))
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -188,26 +182,26 @@ class _HomeState extends State<Home> {
                     SizedBox(
                       height: 15.h,
                     ),
-
-                    _drawerBtn(Icons.home_outlined, "Home", ()=>Get.back()),
-                    _drawerBtn(Icons.favorite_border, "Favorite", (){
+                    _drawerBtn(Icons.home_outlined, "Home", () => Get.back()),
+                    _drawerBtn(Icons.favorite_border, "Favorite", () {
                       Get.back();
-                      Get.to(()=>Favorite());}),
-                    _drawerBtn(Icons.history, "History", (){
+                      Get.to(() => Favorite());
+                    }),
+                    _drawerBtn(Icons.history, "History", () {
                       Get.back();
-                      Get.to(()=>History());}),
-                    _drawerBtn(Icons.info_outline, "About", (){
+                      Get.to(() => History());
+                    }),
+                    _drawerBtn(Icons.info_outline, "About", () {
                       Get.back();
-                      Get.to(()=>About());}),
-                    _drawerBtn(Icons.people_outline , "Contact Us", (){
+                      Get.to(() => About());
+                    }),
+                    _drawerBtn(Icons.people_outline, "Contact Us", () {
                       Get.back();
-                      Get.to(()=>ContactUs());}),
-                    
-                    
+                      Get.to(() => ContactUs());
+                    }),
                   ],
                 ),
               ),
-
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -216,29 +210,35 @@ class _HomeState extends State<Home> {
                       width: 150.w,
                       height: 40.h,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          primary: MyColors.primary,
-                          padding: EdgeInsets.symmetric(horizontal: 15.w,vertical: 5.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(20.r),
-                              bottomRight: Radius.circular(20.r)
-                            )
-                          )
-                        ),
-                        onPressed: ()=>Get.back(), 
-                      child: Row(children: [
-                        Icon(Icons.exit_to_app,size: 30.sp,color: MyColors.normal,),
-                        SizedBox(width: 15.w,),
-                        Text("Exit",style: TextStyle(
-                          color: MyColors.normal,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold
-                        ),)
-                      ],)
-                      ),
+                          style: ElevatedButton.styleFrom(
+                              primary: MyColors.primary,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 15.w, vertical: 5.h),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(20.r),
+                                      bottomRight: Radius.circular(20.r)))),
+                          onPressed: () => Get.back(),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.exit_to_app,
+                                size: 30.sp,
+                                color: MyColors.normal,
+                              ),
+                              SizedBox(
+                                width: 15.w,
+                              ),
+                              Text(
+                                "Exit",
+                                style: TextStyle(
+                                    color: MyColors.normal,
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          )),
                     ),
-
                     SizedBox(
                       height: 30.h,
                     )
@@ -250,42 +250,40 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _drawerBtn(icon,String text,onClick){
+  Widget _drawerBtn(icon, String text, onClick) {
     return Padding(
-      padding:  EdgeInsets.only(bottom: 5.h),
+      padding: EdgeInsets.only(bottom: 5.h),
       child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          primary: Colors.grey.shade100,
-                          padding: EdgeInsets.symmetric(
-                              vertical: 5.h, horizontal: 10.w)),
-                      onPressed: onClick,
-                      child: Row(
-                        children: [
-                          Icon(
-                            icon,
-                            size: 30.sp,
-                            color: MyColors.accent,
-                          ),
-                          SizedBox(
-                            width: 10.w,
-                          ),
-                          Text(
-                            text,
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.sp),
-                          )
-                        ],
-                      )),
+          style: ElevatedButton.styleFrom(
+              primary: Colors.grey.shade100,
+              padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 10.w)),
+          onPressed: onClick,
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 30.sp,
+                color: MyColors.accent,
+              ),
+              SizedBox(
+                width: 10.w,
+              ),
+              Text(
+                text,
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp),
+              )
+            ],
+          )),
     );
   }
 
-  Widget _getProductContent() {
+  Widget _getProductContent(List<Product> products) {
     bool isLoading = context.watch<ProductController>().isLoading;
     bool isError = context.watch<ProductController>().isError;
     String errMsg = context.watch<ProductController>().errMsg;
-    List<Product> products = context.watch<ProductController>().products;
 
     if (isLoading) {
       return Center(
@@ -320,7 +318,8 @@ class _HomeState extends State<Home> {
           itemBuilder: (context, index) {
             return InkWell(
               onTap: () {
-                Get.to(() => ProductDetail(product: products[index]));
+                Get.to(() => ProductDetail(
+                    productId: int.parse(products[index].id.toString())));
               },
               child: Container(
                 width: 330.w,
@@ -354,19 +353,11 @@ class _HomeState extends State<Home> {
                       width: 200.w,
                       height: 100.h,
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Icon(
-                                Icons.favorite_outline,
-                                size: 24.sp,
-                                color: MyColors.primary,
-                              ),
-                            ],
-                          ),
+                          
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -387,6 +378,7 @@ class _HomeState extends State<Home> {
                               ),
                             ],
                           ),
+                          SizedBox(height: 15.h,),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
